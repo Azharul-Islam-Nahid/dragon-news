@@ -1,14 +1,22 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import { AuthContext } from '../../contexts/AuthProvider/AuthProvider';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const Login = () => {
 
-    const navigate = useNavigate()
+    const [error, setError] = useState('');
 
-    const { signIn } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const location = useLocation();
+
+
+    const from = location.state?.from?.pathname || '/';
+
+    const { signIn, setLoading } = useContext(AuthContext);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -20,10 +28,21 @@ const Login = () => {
                 const user = result.user
                 console.log(user);
                 form.reset();
+                setError('');
+                if (user.emailVerified) {
+                    navigate(from, { replace: true });
+                }
+                else {
+                    toast.error('Please verify your email before logging in!');
+                }
             })
-            .catch(error =>
-                console.error(error))
-
+            .catch(error => {
+                console.error(error)
+                setError(error.message)
+            })
+            .finally(() => {
+                setLoading(false);
+            })
 
     }
 
@@ -39,7 +58,7 @@ const Login = () => {
                 <Form.Control type='password' name='password' placeholder='Password' required />
             </Form.Group>
             <Form.Text className='text-danger'>
-                We'll never share your email with anyone else.
+                {error}
             </Form.Text>
             <Form.Group className='mt-2 mb-3' controlId='formBasicCheckbox'>
                 <Button variant='primary' type='submit'>
